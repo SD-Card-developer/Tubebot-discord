@@ -11,17 +11,17 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 discord.Object.bots = bot
 c = {}  # 임시 경고
-bot.without = []  # 화이트리스트 채널
+bot.without = {}  # 화이트리스트 채널
 bot.security_channels = {}  # 서버별 보안 채널 {guild_id: [channel_id, ...]}
 
 # 화이트리스트 로드
-if os.path.exists('whitelist.txt'):
-    with open('whitelist.txt', 'r', encoding='utf-8') as r:
-        bot.without = [int(i) for i in r.read().split()]
+bot.without_spam = {}
 
-if os.path.exists('whitelist_s.txt'):
-    with open('whitelist_s.txt', 'r', encoding='utf-8') as r:
-        bot.without = [int(i) for i in r.read().split()]
+if os.path.exists('whitelist.json'):
+    bot.without = read_json('whitelist.json')
+
+if os.path.exists('whitelist_s.json'):
+    bot.without_spam = read_json('whitelist_s.json')
 
 # 보안 채널 ds로드 (channels.txt -> 서버ID:채널ID)
 if os.path.exists('channels.txt'):
@@ -56,17 +56,17 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.author == bot.user or message.author.bot:
-        return
-    if message.channel.id not in bot.without:
-        if cutting(message.content):
-            try:
-                # 슥슥 컷! -- ㅜ
-                await message.delete()
-                # ㅜ --- 새로 배운것. 이벤트를 보내기! 디스패치!
-                bot.dispatch("bad_word_caught", message)
-            except Exception as e:
-                print(f"삭제 에러: {e}")
+    if message.guild:
+        guild_id = str(message.guild.id)
+        whitelist_channels = bot.without.get(guild_id, [])
+    
+        if message.channel.id not in whitelist_channels:
+            if cutting(message.content):
+                try:
+                    await message.delete()
+                    bot.dispatch("bad_word_caught", message)
+                except Exception as e:
+                    print(f"삭제 에러: {e}")
     await bot.process_commands(message)
 
 @bot.event
@@ -94,7 +94,7 @@ async def set_sec(interaction: Interaction, channel: TextChannel):
             f.write(f"{gid}:{cid}\n")
         await interaction.response.send_message(f'✅ {channel.mention} 등록 완료.', ephemeral=True)
     else:
-        await interaction.response.send_message('이미 등록된 채널이야.', ephemeral=True)
+        await interaction.response.send_message('이미 등록된 채널입니다.', ephemeral=True)
 
 @bot.tree.command(name='보안-채널-삭제', description='보안 메시지 채널 삭제')
 async def del_sec(interaction: Interaction, channel: TextChannel):
@@ -119,12 +119,13 @@ async def purge(ctx, amount: int):
 @bot.tree.command(name='욕설-화이트리스트-채널-추가', description='이 채널을 욕설 검열에서 제외합니다.')
 @app_commands.describe(channel='제외할 채널')
 async def wl_add(interaction: Interaction, channel: TextChannel):
-    global without
-    if channel.id not in without:
-        without.append(channel.id)
-        # 파일에 추가 저장
-        with open("whitelist.txt", "a", encoding='utf-8') as f:
-            f.write(f"{channel.id}\n")
+    guild_id = str(interaction.guild.id) #
+    if guild_id not in bot.without:
+        bot.without[guild_id] = []
+    
+    if channel.id not in bot.without[guild_id]:
+        bot.without[guild_id].append(channel.id)
+        json_write('whitelist.json', bot.without)
         await interaction.response.send_message(f'✅ {channel.mention} 채널이 화이트리스트에 등록되었습니다.', ephemeral=True)
     else:
         await interaction.response.send_message('이미 등록된 채널입니다.', ephemeral=True)
@@ -133,13 +134,10 @@ async def wl_add(interaction: Interaction, channel: TextChannel):
 @bot.tree.command(name='욕설-화이트리스트-채널-제거', description='이 채널을 다시 욕설 검열에 포함합니다.')
 @app_commands.describe(channel='다시 포함할 채널')
 async def wl_remove(interaction: Interaction, channel: TextChannel):
-    global without
-    if channel.id in without:
-        without.remove(channel.id)
-        # 파일에서 해당 ID 삭제하고 다시 쓰기
-        with open("whitelist.txt", "w", encoding='utf-8') as f:
-            for c_id in without:
-                f.write(f"{c_id}\n")
+    guild_id = str(interaction.guild.id)
+    if guild_id in bot.without and channel.id in bot.without[guild_id]:
+        bot.without[guild_id].remove(channel.id)
+        json_write('whitelist.json', bot.without)
         await interaction.response.send_message(f'🗑️ {channel.mention} 채널을 화이트리스트에서 제거했습니다.', ephemeral=True)
     else:
         await interaction.response.send_message('화이트리스트에 없는 채널입니다.', ephemeral=True)
@@ -147,12 +145,12 @@ async def wl_remove(interaction: Interaction, channel: TextChannel):
 @bot.tree.command(name='도배-화이트리스트-채널-추가', description='이 채널을 도배 검열에서 제외합니다.')
 @app_commands.describe(channel='제외할 채널')
 async def swl_add(interaction: Interaction, channel: TextChannel):
-    global without
-    if channel.id not in without:
-        without.append(channel.id)
-        # 파일에 추가 저장
-        with open("whitelist.txt_s", "a", encoding='utf-8') as f:
-            f.write(f"{channel.id}\n")
+    guild_id = str(interaction.guild.id)
+    if guild_id not in bot.without_spam:
+        bot.without_spam[guild_id] = []
+    if channel.id not in bot.without_spam[guild_id]:
+        bot.without_spam[guild_id].append(channel.id)
+        json_write('whitelist_s.json', bot.without_spam)
         await interaction.response.send_message(f'✅ {channel.mention} 채널이 화이트리스트에 등록되었습니다.', ephemeral=True)
     else:
         await interaction.response.send_message('이미 등록된 채널입니다.', ephemeral=True)
@@ -161,13 +159,10 @@ async def swl_add(interaction: Interaction, channel: TextChannel):
 @bot.tree.command(name='도배-화이트리스트-채널-제거', description='이 채널을 다시 도배 검열에 포함합니다.')
 @app_commands.describe(channel='다시 포함할 채널')
 async def swl_remove(interaction: Interaction, channel: TextChannel):
-    global without
-    if channel.id in without:
-        without.remove(channel.id)
-        # 파일에서 해당 ID 삭제하고 다시 쓰기
-        with open("whitelist_s.txt", "w", encoding='utf-8') as f:
-            for c_id in without:
-                f.write(f"{c_id}\n")
+    guild_id = str(interaction.guild.id)
+    if guild_id in bot.without_spam and channel.id in bot.without_spam[guild_id]:
+        bot.without_spam[guild_id].remove(channel.id)
+        json_write('whitelist_s.json', bot.without_spam)
         await interaction.response.send_message(f'🗑️ {channel.mention} 채널을 화이트리스트에서 제거했습니다.', ephemeral=True)
     else:
         await interaction.response.send_message('화이트리스트에 없는 채널입니다.', ephemeral=True)
