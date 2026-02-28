@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 from datetime import timedelta, datetime
 import asyncio
+from libs.badwordcutting import cutting
+from libs.easyfile import *
+from libs.easydiscord import m
 
 def lines_count(content):
     if not content:
@@ -16,7 +19,7 @@ def lines_count(content):
     # 일반 글자
     else:
         return length / 32
-# 10분 지나면 초기화하기
+
 class Spam1killer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -25,15 +28,18 @@ class Spam1killer(commands.Cog):
         self.u_msg_id = {}
         self.cn_message={}
         self.task = {}
+        self.warnlist = bot.warnlist
     @commands.Cog.listener()
     async def on_message(self, messages):
         key = messages.author.id
         c_id = messages.channel.id
         lines = lines_count(messages.content)
         now = datetime.now()
+        is_bad = cutting(messages.content)
         # 봇이 쓴 메시지는 무시
         if messages.author.bot:
             return
+        current_score = self.bot.warnlist.get(str(key), 0)
         # ㅜ 채널 - 메시지 관련 / 유저랑은 관계 X
         if not c_id in self.cn_message: # 채널이 딗에 등록되어 있지 않으면
             self.cn_message[c_id] = [lines, now]
@@ -66,9 +72,8 @@ class Spam1killer(commands.Cog):
         if lines > 14:
             if not key in self.u_saved: # 처음 한 사용자일때는 딕셔너리에 추가하가기
                 self.u_saved[key] = now
-                self.u_msg_id[key] = []
+                self.u_msg_id[key] = [messages.id]
                 self.u_temp_warn[key] = 12 if lines > 40 else 1
-                self.u_msg_id[key].append(messages.id)
 
             elif lines > 40: # 엄청난도배
                 if not key in self.u_msg_id: self.u_msg_id[key] = []
@@ -83,11 +88,15 @@ class Spam1killer(commands.Cog):
                     if key in self.u_msg_id: # 사용자명에 해당하는 메시지id가 존재하면
                         self.u_msg_id[key] = self.u_msg_id[key][-1:]
                 else:
-                    self.u_temp_warn[key] = self.u_temp_warn.get(key, 0) + 1
+                    score = 3 if is_bad else 1
+                    self.u_temp_warn[key] = self.u_temp_warn.get(key, 0) + score
                     self.u_msg_id[key].append(messages.id)
 
         # ---- ㅜ 처벌만 하는 로직 ----ㅜ ----
         if self.u_temp_warn.get(key, 0) > 3: # 도배로 판정됨
+            self.bot.warnlist[str(key)] = current_score + 1
+            json_write('warn.json', self.bot.warnlist)
+
             safe = []
             _now = discord.utils.utcnow()
             limit = _now - timedelta(days=14)
@@ -104,8 +113,10 @@ class Spam1killer(commands.Cog):
                 if hasattr(messages.author, 'timeout'):
                     await messages.author.timeout(timedelta(minutes=30), reason = '도배')
                 # -- 일부 로직 Ai 참고 -- Object와 delete_messages 새로 배워갑니다~~
-                to_delete = [discord.Object(id=i) for i in msg[:100]]
-                await messages.channel.delete_messages(to_delete)
+                for n in msg:
+                    t = m(n)
+                    if t:
+                        await t.delete_messages([discord.Object(n)])
                 # 참고 끝
             except (discord.HTTPException, AttributeError,TypeError,KeyError):
                 pass
