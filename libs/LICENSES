@@ -1,0 +1,6 @@
+libs 폴더에 존재하는 라이브러리들은 그 안의 코드를 베끼지 말고 라이브러리의 import 형태로만 써주세요.
+그밖의 파일들은 마음껏 사용이 가능하나, 자신이 만들었다는 이야기는 하지 말아주세요.
+
+[Usage Guidelines]
+Libraries in the libs/ folder: Do not copy or redistribute the source code within the libs/ directory. Please use them only through standard import statements.
+Other files: All other files are free to use and modify. However, you must not claim ownership or state that you are the original creator of these materials.
