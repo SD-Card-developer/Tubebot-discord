@@ -8,7 +8,7 @@ from dotenv import *
 load_dotenv()
 
 # 이건 2.0 버전
-token = os.getenv("token")
+token = os.getenv("token")[::-1]
 intents = Intents.default()
 intents.members = True
 intents.message_content = True
