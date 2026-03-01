@@ -3,7 +3,7 @@ from discord import app_commands, Intents, TextChannel, Interaction
 from discord.ext import commands
 from badwordcutting import *
 from libs.easyfile import *
-
+# 2.0버전
 os.environ["token"] = ''
 intents = Intents.default()
 intents.members = True
