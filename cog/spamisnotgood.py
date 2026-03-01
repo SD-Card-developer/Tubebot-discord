@@ -28,9 +28,11 @@ class Spam1killer(commands.Cog):
         self.u_msg_id = {}
         self.cn_message={}
         self.task = {}
+        self.score = 0
         self.warnlist = bot.warnlist
     @commands.Cog.listener()
     async def on_message(self, messages):
+        self.score += 1
         key = messages.author.id
         c_id = messages.channel.id
         lines = lines_count(messages.content)
@@ -42,15 +44,14 @@ class Spam1killer(commands.Cog):
         current_score = self.bot.warnlist.get(str(key), 0)
         # ㅜ 채널 - 메시지 관련 / 유저랑은 관계 X
         if not c_id in self.cn_message: # 채널이 딗에 등록되어 있지 않으면
-            self.cn_message[c_id] = [lines, now]
+            self.cn_message[c_id] = [1, now]
         else:
             data_c = self.cn_message[c_id]
             if now - data_c[1] >= timedelta(seconds=10): # 간격이 10초보다 크면 채널값 초기화
-                self.cn_message[c_id] = [lines, now]
+                self.cn_message[c_id] = [1, now]
             else:
-                data_c[0] += lines
-                data_c[1] = now
-                if self.cn_message[c_id][0] > 30:
+                data_c[0] += 1
+                if self.cn_message[c_id][0] > 15:
                     if messages.channel.slowmode_delay != 30:
                         try:
                             await messages.channel.edit(slowmode_delay=30)
@@ -114,7 +115,7 @@ class Spam1killer(commands.Cog):
                     await messages.author.timeout(timedelta(minutes=30), reason = '도배')
                 # -- 일부 로직 Ai 참고 -- Object와 delete_messages 새로 배워갑니다~~
                 for n in msg:
-                    t = m(n)
+                    t = m(m_id=n)
                     if t:
                         await t.delete_messages([discord.Object(n)])
                 # 참고 끝

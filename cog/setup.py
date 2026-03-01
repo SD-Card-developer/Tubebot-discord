@@ -42,7 +42,7 @@ class StartView(discord.ui.View):
                     embed=embed_list[self.step],
                     view=self
                 )
-            btn_yes = discord.ui.Button(label="갑시다", style=discord.ButtonStyle('green'))
+            btn_yes = discord.ui.Button(label="갑시다", style=discord.ButtonStyle.green)
             btn_yes.callback = if_go
             self.add_item(btn_yes)
 
@@ -63,9 +63,9 @@ class StartView(discord.ui.View):
                     embed=embed_list[self.step],
                     view=self
                 )
-            btn_yes = discord.ui.Button(label="네", style=discord.ButtonStyle('green'))
+            btn_yes = discord.ui.Button(label="네", style=discord.ButtonStyle.green)
             btn_yes.callback = if_yes
-            btn_no = discord.ui.Button(label="아니오", style=discord.ButtonStyle('red'))
+            btn_no = discord.ui.Button(label="아니오", style=discord.ButtonStyle.red)
             btn_no.callback = if_no
             self.add_item(btn_yes)
             self.add_item(btn_no)
@@ -87,9 +87,9 @@ class StartView(discord.ui.View):
                     embed=embed_list[5],
                     view=None
                 )
-            btn_yes = discord.ui.Button(label="네", style=discord.ButtonStyle('green'))
+            btn_yes = discord.ui.Button(label="네", style=discord.ButtonStyle.green)
             btn_yes.callback = if_yes
-            btn_no = discord.ui.Button(label="아니요", style=discord.ButtonStyle('red'))
+            btn_no = discord.ui.Button(label="아니요", style=discord.ButtonStyle.red)
             btn_no.callback = if_no
             self.add_item(btn_yes)
             self.add_item(btn_no)

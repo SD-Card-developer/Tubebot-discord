@@ -17,5 +17,4 @@ class BadWordKiller(commands.Cog):
 
 
 async def setup(bot):
-    from __main__ import warnlist
     await bot.add_cog(BadWordKiller(bot))

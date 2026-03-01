@@ -3,9 +3,12 @@ from discord import app_commands, Intents, TextChannel, Interaction
 from discord.ext import commands
 from libs.badwordcutting import *
 from libs.easyfile import *
+from dotenv import *
 
-# 2.0버전
-os.environ["token"] = ''
+load_dotenv()
+
+# 이건 2.0 버전
+token = os.getenv("token")
 intents = Intents.default()
 intents.members = True
 intents.message_content = True
@@ -180,5 +183,49 @@ async def setup_hook():
             pass
     await bot.tree.sync()
 
+@bot.command()
+@commands.is_owner()
+async def reload(ctx, extension):
+    try:
+        await bot.reload_extension(f'cog.{extension}') # 파일 경로에 맞춰 수정
+        await ctx.send(f'✅ {extension} 모듈이 새로고침 되었습니다!')
+    except Exception as e:
+        await ctx.send(f'❌ 오류 발생: {e}')
 
-bot.run(os.environ["token"])
+@bot.command()
+@commands.has_permissions(manage_messages=True) # 메시지관리가 돼어야 가능함
+async def pg(ctx, number, types='all'):
+    if types.startswith('all'):
+        num = int(number)
+        await ctx.channel.purge(limit=num)
+        await ctx.send(f'총 {num}개 메시지가 삭제되었어요', delete_after=2)
+
+    elif types.startswith('<@'):
+        result = ""
+        for char in types:
+            if char.isdigit():
+                result += char
+        result = int(result)
+        num = int(number)
+        deleted = await ctx.channel.purge(limit=num, check=lambda mess: mess.author.id == result)
+        await ctx.send(f'"{deleted[0].author}"님의 메시지 {num}개가 삭제되었어요', delete_after=2)
+
+    elif types.startswith('bot'):
+        num = int(number)
+        def haha(mess):
+            return mess.author.bot
+        deleted = await ctx.channel.purge(limit=num, check=haha)
+        if deleted:
+            await ctx.send(f'봇의 메시지 {len(deleted)}개가 삭제되었어요', delete_after=2)
+        else:
+            await ctx.send('삭제할 일반 유저 메시지가 없네요!', delete_after=2)
+    elif types.startswith('user'):
+        num = int(number)
+        def haha(mess):
+            return not mess.author.bot
+        deleted = await ctx.channel.purge(limit=num, check=haha)
+        if deleted:
+            await ctx.send(f'일반 유저의 메시지 {len(deleted)}개가 삭제되었어요', delete_after=2)
+        else:
+            await ctx.send('삭제할 일반 유저 메시지가 없네요!', delete_after=2)
+bot.run(token)
