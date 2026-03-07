@@ -18,6 +18,8 @@ c = {}  # 임시 경고
 bot.without = {}  # 화이트리스트 채널
 bot.security_channels = {}  # 서버별 보안 채널 {guild_id: [channel_id, ...]}
 
+bot.u_msgs = {} # 유저들의 메시지를 실시간으로다가 판별
+
 # 화이트리스트 로드
 bot.without_spam = {}
 
@@ -26,6 +28,9 @@ if os.path.exists('whitelist.json'):
 
 if os.path.exists('whitelist_s.json'):
     bot.without_spam = read_json('whitelist_s.json')
+
+if os.path.exists('u_msgs.json'):
+    bot.u_msgs = read_json('u_msgs.json')
 
 # 보안 채널 ds로드 (channels.txt -> 서버ID:채널ID)
 if os.path.exists('channels.txt'):

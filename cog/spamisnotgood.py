@@ -26,10 +26,12 @@ class Spam1killer(commands.Cog):
         self.u_temp_warn = {}
         self.u_saved = {}
         self.u_msg_id = {}
+
         self.cn_message={}
         self.task = {}
         self.score = 0
-        self.warnlist = bot.warnlist
+        self.warnlist = self.bot.warnlist
+
     @commands.Cog.listener()
     async def on_message(self, messages):
         self.score += 1
@@ -114,10 +116,9 @@ class Spam1killer(commands.Cog):
                 if hasattr(messages.author, 'timeout'):
                     await messages.author.timeout(timedelta(minutes=30), reason = '도배')
                 # -- 일부 로직 Ai 참고 -- Object와 delete_messages 새로 배워갑니다~~
-                for n in msg:
-                    t = m(m_id=n)
-                    if t:
-                        await t.delete_messages([discord.Object(n)])
+                if self.u_msg_id.get(key, []):
+                    targets = [discord.Object(id=m_id) for m_id in self.u_msg_id.get(key, [])]
+                    await messages.channel.delete_messages(targets)
                 # 참고 끝
             except (discord.HTTPException, AttributeError,TypeError,KeyError):
                 pass
