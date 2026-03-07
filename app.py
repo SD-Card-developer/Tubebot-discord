@@ -95,6 +95,7 @@ async def on_member_join(member):
 
 # 슬래시 명령어들 (서버별 보안 채널 설정/삭제)
 @bot.tree.command(name='보안채널설정', description='보안 메시지 채널 추가')
+@commands.has_permissions(administrator=True)
 async def set_sec(interaction: Interaction, channel: TextChannel):
     gid, cid = interaction.guild.id, channel.id
     if cid not in bot.security_channels.get(gid, []):
@@ -106,6 +107,7 @@ async def set_sec(interaction: Interaction, channel: TextChannel):
         await interaction.response.send_message('이미 등록된 채널입니다.', ephemeral=True)
 
 @bot.tree.command(name='보안-채널-삭제', description='보안 메시지 채널 삭제')
+@commands.has_permissions(administrator=True)
 async def del_sec(interaction: Interaction, channel: TextChannel):
     gid, cid = interaction.guild.id, channel.id
     if cid in bot.security_channels.get(gid, []):
@@ -127,6 +129,7 @@ async def purge(ctx, amount: int):
 # 화이트리스트 추가 명령어
 @bot.tree.command(name='욕설-화이트리스트-채널-추가', description='이 채널을 욕설 검열에서 제외합니다.')
 @app_commands.describe(channel='제외할 채널')
+@app_commands.checks.has_permissions(administrator=True)
 async def wl_add(interaction: Interaction, channel: TextChannel):
     guild_id = str(interaction.guild.id) #
     if guild_id not in bot.without:
@@ -142,6 +145,7 @@ async def wl_add(interaction: Interaction, channel: TextChannel):
 # 화이트리스트 제거 명령어
 @bot.tree.command(name='욕설-화이트리스트-채널-제거', description='이 채널을 다시 욕설 검열에 포함합니다.')
 @app_commands.describe(channel='다시 포함할 채널')
+@app_commands.checks.has_permissions(administrator=True)
 async def wl_remove(interaction: Interaction, channel: TextChannel):
     guild_id = str(interaction.guild.id)
     if guild_id in bot.without and channel.id in bot.without[guild_id]:
@@ -153,6 +157,7 @@ async def wl_remove(interaction: Interaction, channel: TextChannel):
 
 @bot.tree.command(name='도배-화이트리스트-채널-추가', description='이 채널을 도배 검열에서 제외합니다.')
 @app_commands.describe(channel='제외할 채널')
+@app_commands.checks.has_permissions(administrator=True)
 async def swl_add(interaction: Interaction, channel: TextChannel):
     guild_id = str(interaction.guild.id)
     if guild_id not in bot.without_spam:
@@ -167,6 +172,7 @@ async def swl_add(interaction: Interaction, channel: TextChannel):
 # 화이트리스트 제거 명령어
 @bot.tree.command(name='도배-화이트리스트-채널-제거', description='이 채널을 다시 도배 검열에 포함합니다.')
 @app_commands.describe(channel='다시 포함할 채널')
+@app_commands.checks.has_permissions(administrator=True)
 async def swl_remove(interaction: Interaction, channel: TextChannel):
     guild_id = str(interaction.guild.id)
     if guild_id in bot.without_spam and channel.id in bot.without_spam[guild_id]:
